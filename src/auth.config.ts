@@ -1,45 +1,62 @@
-// auth.config.ts
+import type { NextAuthConfig } from "next-auth"
+import Credentials from "next-auth/providers/credentials"
 
-import CredentialsProvider from "next-auth/providers/credentials"
-
-export const authOptions: NextAuthOptions = {
+export const authConfig: NextAuthConfig = {
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
-      credentials: {},
+      credentials: {
+        email: {},
+        password: {},
+      },
       async authorize(credentials) {
-        const res = await fetch(`${process.env.BACKEND_URL}/api/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(credentials),
-        })
+        if (!credentials) return null
 
-        const data = await res.json()
+        try {
+          const res = await fetch(`${process.env.BACKEND_URL}/api/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(credentials),
+          })
 
-        if (!res.ok) return null
+          if (!res.ok) return null
 
-        return {
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
+          const data = await res.json()
+
+          if (!data?.user) return null
+
+          return {
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email,
+            accessToken: data.accessToken,
+          }
+        } catch {
+          return null
         }
       },
     }),
   ],
+
   session: { strategy: "jwt" },
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = user.accessToken
         token.id = user.id
+        
       }
       return token
     },
+
     async session({ session, token }) {
-      session.user.id = token.id as string
-      session.accessToken = token.accessToken as string
+      if (session.user) {
+        session.user.id = token.id as string
+      }
+      ;(session as any).accessToken = token.accessToken
       return session
     },
   },
+
   secret: process.env.NEXTAUTH_SECRET,
 }

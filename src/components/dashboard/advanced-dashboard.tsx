@@ -38,6 +38,20 @@ export function AdvancedDashboard() {
     { month: 'May', income: 6500, expenses: 3200, profit: 3300 },
     { month: 'Jun', income: 7100, expenses: 3400, profit: 3700 },
   ];
+  type ChartData = {
+  period: string
+  income: number
+  expenses: number
+  profit: number
+}
+const weeklyDataFormatted: ChartData[] = weeklyData.map(d => ({
+  period: d.week, // o date si usas date
+  income: d.income,
+  expenses: d.expenses,
+  profit: d.profit,
+}))
+
+
 
   const incomeSourcesData = [
     { name: 'Salario', value: 4500, color: '#8b5cf6' },
@@ -52,10 +66,25 @@ export function AdvancedDashboard() {
     { name: 'Entretenimiento', value: 300, color: '#a855f7' },
     { name: 'Otros', value: 200, color: '#64748b' },
   ];
+  const monthlyDataFormatted: ChartData[] = monthlyData.map(d => ({
+  period: d.month,
+  income: d.income,
+  expenses: d.expenses,
+  profit: d.profit,
+}))
 
-  let data = monthlyData;
-  if (period === 'daily') data = dailyData;
-  else if (period === 'weekly') data = weeklyData;
+const dailyDataFormatted: ChartData[] = dailyData.map(d => ({
+  period: d.date,
+  income: d.income,
+  expenses: d.expenses,
+  profit: d.profit,
+}))
+
+
+  let data: ChartData[] = monthlyDataFormatted
+
+if (period === 'daily') data = dailyDataFormatted
+else if (period === 'weekly') data = weeklyDataFormatted
 
   // Calculate totals
   const totalIncome = data.reduce((sum, item) => sum + item.income, 0);

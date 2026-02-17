@@ -398,13 +398,15 @@ export function DetailedLoans() {
                       <Button
                         variant="outline"
                         className="w-full bg-transparent"
-                        onClick={() =>
-                          setNewPayment({
-                            loanId: loan.id,
-                            amount: '',
-                            notes: '',
-                          }) && setShowForm(true)
-                        }
+                       onClick={() => {
+                        setNewPayment({
+                          loanId: loan.id,
+                          amount: '',
+                          notes: '',
+                        });
+                        setShowForm(true);
+                      }}
+
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Agregar Pago
