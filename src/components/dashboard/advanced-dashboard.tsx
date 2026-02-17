@@ -5,7 +5,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Button } from '@/src/components/ui/button';
 import { TrendingUp, TrendingDown, DollarSign, PieChart as PieChartIcon } from 'lucide-react';
-import { formatSoles } from '@/lib/currency';
+import { formatSoles } from '@/src/lib/currency';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 

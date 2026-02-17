@@ -9,7 +9,7 @@ import { Badge } from '@/src/components/ui/badge';
 import { Textarea } from '@/src/components/ui/textarea';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { formatSoles } from '@/lib/currency';
+import { formatSoles } from '@/src/lib/currency';
 
 interface MealDetail {
   id: string;

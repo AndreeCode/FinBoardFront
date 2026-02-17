@@ -14,7 +14,7 @@ import {
   Wallet,
   DollarSign 
 } from 'lucide-react';
-import { formatSoles } from '@/lib/currency';
+import { formatSoles } from '@/src/lib/currency';
 
 interface Transaction {
   id: string;

@@ -4,7 +4,7 @@ import React from "react"
 
 import { Card, CardContent } from '@/src/components/ui/card';
 import { TrendingUp, TrendingDown, Wallet, PieChart } from 'lucide-react';
-import { formatSoles } from '@/lib/currency';
+import { formatSoles } from '@/src/lib/currency';
 
 interface SummaryCard {
   title: string;

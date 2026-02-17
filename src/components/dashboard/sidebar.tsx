@@ -20,7 +20,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@/src/lib/utils';
 
 interface NavItem {
   label: string;

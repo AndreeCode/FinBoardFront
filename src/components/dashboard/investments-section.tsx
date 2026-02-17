@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Badge } from '@/src/components/ui/badge';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { formatSoles } from '@/lib/currency';
+import { formatSoles } from '@/src/lib/currency';
 
 interface Investment {
   id: string;
