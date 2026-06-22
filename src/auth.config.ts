@@ -6,30 +6,35 @@ export const authConfig: NextAuthConfig = {
     Credentials({
       name: "Credentials",
       credentials: {
-        email: {},
-        password: {},
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials) return null
+        if (!credentials?.email || !credentials?.password) return null
 
         try {
-          const res = await fetch(`${process.env.BACKEND_URL}/api/login`, {
+          const res = await fetch(`${process.env.BACKEND_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(credentials),
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
           })
 
           if (!res.ok) return null
 
-          const data = await res.json()
+          const response = await res.json()
 
+          if (response.status !== 200) return null
+
+          const { data } = response
           if (!data?.user) return null
 
           return {
             id: data.user.id,
             name: data.user.name,
             email: data.user.email,
-            accessToken: data.accessToken,
           }
         } catch {
           return null
@@ -44,7 +49,6 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.accessToken = (user as any).accessToken
       }
       return token
     },
@@ -53,10 +57,13 @@ export const authConfig: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string
       }
-      ;(session as any).accessToken = token.accessToken
       return session
     },
   },
 
   secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: '/login',
+    error: '/login',
+  },
 }
