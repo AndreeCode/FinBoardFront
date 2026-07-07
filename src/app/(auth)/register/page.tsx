@@ -7,86 +7,49 @@ import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 import { Mail, Lock, User, Loader2, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'El nombre es requerido';
-    }
-
-    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      newErrors.email = 'Email inválido';
-    }
-
-    if (formData.password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setIsLoading(true);
 
-    if (!validateForm()) {
-      console.log('[v0] Validation failed:', errors);
+    const formData = new FormData(e.currentTarget)
+    const fullName = formData.get('fullName') as string
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const confirmPassword = formData.get('confirmPassword') as string
+
+    if (password !== confirmPassword) {
+      setIsLoading(false);
+      toast.error('Las contraseñas no coinciden');
       return;
     }
 
-    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, email, password }),
+      })
 
-    console.log('[v0] Registration attempt:', {
-      fullName: formData.fullName,
-      email: formData.email,
-      password: '***hidden***',
-      timestamp: new Date().toISOString(),
-    });
+      if (!res.ok) {
+        const data = await res.json()
+        setIsLoading(false);
+        toast.error(data.error || 'Error al crear la cuenta');
+        return;
+      }
 
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log('[v0] Registration successful, redirecting to dashboard');
       router.push('/dashboard');
-    }, 1500);
-  };
-
-  const handleGoogleSignup = () => {
-    console.log('[v0] Google signup clicked');
-  };
-
-  const handleGithubSignup = () => {
-    console.log('[v0] GitHub signup clicked');
-  };
+      router.refresh();
+    } catch (error) {
+      setIsLoading(false);
+      toast.error('Error al conectar con el servidor');
+    }
+  }
 
   return (
     <AuthCard
@@ -110,15 +73,11 @@ export default function RegisterPage() {
               name="fullName"
               type="text"
               placeholder="Juan Pérez"
-              className={`pl-10 ${errors.fullName ? 'border-destructive' : ''}`}
-              value={formData.fullName}
-              onChange={handleInputChange}
+              className="pl-10"
+              required
               disabled={isLoading}
             />
           </div>
-          {errors.fullName && (
-            <p className="text-xs text-destructive">{errors.fullName}</p>
-          )}
         </div>
 
         <div className="space-y-2">
@@ -132,15 +91,11 @@ export default function RegisterPage() {
               name="email"
               type="email"
               placeholder="tu@email.com"
-              className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
-              value={formData.email}
-              onChange={handleInputChange}
+              className="pl-10"
+              required
               disabled={isLoading}
             />
           </div>
-          {errors.email && (
-            <p className="text-xs text-destructive">{errors.email}</p>
-          )}
         </div>
 
         <div className="space-y-2">
@@ -154,15 +109,12 @@ export default function RegisterPage() {
               name="password"
               type="password"
               placeholder="••••••••"
-              className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
-              value={formData.password}
-              onChange={handleInputChange}
+              className="pl-10"
+              required
+              minLength={6}
               disabled={isLoading}
             />
           </div>
-          {errors.password && (
-            <p className="text-xs text-destructive">{errors.password}</p>
-          )}
         </div>
 
         <div className="space-y-2">
@@ -176,15 +128,12 @@ export default function RegisterPage() {
               name="confirmPassword"
               type="password"
               placeholder="••••••••"
-              className={`pl-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
+              className="pl-10"
+              required
+              minLength={6}
               disabled={isLoading}
             />
           </div>
-          {errors.confirmPassword && (
-            <p className="text-xs text-destructive">{errors.confirmPassword}</p>
-          )}
         </div>
 
         <div className="bg-muted/50 p-3 rounded-lg">
@@ -222,20 +171,10 @@ export default function RegisterPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGoogleSignup}
-          disabled={isLoading}
-        >
+        <Button type="button" variant="outline" disabled={isLoading}>
           Google
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGithubSignup}
-          disabled={isLoading}
-        >
+        <Button type="button" variant="outline" disabled={isLoading}>
           GitHub
         </Button>
       </div>

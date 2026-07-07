@@ -1,22 +1,18 @@
-'use client';
-
-import { MealsManager } from '@/src/components/dashboard/meals-manager';
+import { Suspense } from 'react'
+import { ExpensesByCategoryManager } from '@/src/components/dashboard/expenses-by-category'
+import { Loader2 } from 'lucide-react'
 
 export default function MealsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="px-6 py-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Registro de Comidas</h1>
-            <p className="text-muted-foreground mt-2">
-              Controla tus gastos en alimentación con registro detallado por comida
-            </p>
-          </div>
-
-          <MealsManager />
-        </div>
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Gastos por Categoría</h1>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1">Visualiza tus gastos agrupados por categoría</p>
       </div>
-    </div>
-  );
+
+      <Suspense fallback={<div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>}>
+        <ExpensesByCategoryManager />
+      </Suspense>
+    </>
+  )
 }

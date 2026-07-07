@@ -1,22 +1,14 @@
-'use client';
+import { CreditsManager } from '@/src/components/dashboard/credits-manager'
 
-import { DetailedLoans } from '@/src/components/dashboard/detailed-loans';
-
-export default function LoansPage() {
+export default function CreditsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="px-6 py-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Gestión de Préstamos</h1>
-            <p className="text-muted-foreground mt-2">
-              Controla todos tus préstamos, pagos e inversiones realizadas a terceros
-            </p>
-          </div>
-
-          <DetailedLoans />
-        </div>
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Créditos</h1>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1">Gestiona tus créditos y deudas</p>
       </div>
-    </div>
-  );
+
+      <CreditsManager />
+    </>
+  )
 }

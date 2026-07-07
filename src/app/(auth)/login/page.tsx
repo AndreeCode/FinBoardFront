@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AuthCard } from '@/src/components/auth/auth-card'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
 import { Mail, Lock, Loader2 } from 'lucide-react'
-import { login, oauthLogin } from '@/src/lib/actions/auth'
 import { toast } from 'sonner'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -17,17 +18,29 @@ export default function LoginPage() {
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const result = await login(formData)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
-    if (result?.error) {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setIsLoading(false)
+        toast.error(data.error || 'Credenciales inválidas')
+        return
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+    } catch (error) {
       setIsLoading(false)
-      toast.error(result.error)
+      toast.error('Error al conectar con el servidor')
     }
-  }
-
-  async function handleOAuthLogin(provider: string) {
-    setIsLoading(true)
-    await oauthLogin(provider)
   }
 
   return (
@@ -104,20 +117,10 @@ export default function LoginPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOAuthLogin('google')}
-            disabled={isLoading}
-          >
+          <Button type="button" variant="outline" disabled={isLoading}>
             Google
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOAuthLogin('github')}
-            disabled={isLoading}
-          >
+          <Button type="button" variant="outline" disabled={isLoading}>
             GitHub
           </Button>
         </div>

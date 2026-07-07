@@ -2,7 +2,7 @@ import { SummaryCards } from '@/src/components/dashboard/summary-cards'
 import { ExpenseChart } from '@/src/components/dashboard/expense-chart'
 import { CategoriesChart } from '@/src/components/dashboard/categories-chart'
 import { TransactionsList } from '@/src/components/dashboard/transactions-list'
-import { FrequentExpenses } from '@/src/components/dashboard/frequent-expenses'
+import { PeriodComparison } from '@/src/components/dashboard/period-comparison'
 
 export default function DashboardPage() {
   return (
@@ -19,7 +19,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <ExpenseChart />
         <CategoriesChart />
-        <FrequentExpenses />
+        <PeriodComparison />
       </div>
       
       <div>

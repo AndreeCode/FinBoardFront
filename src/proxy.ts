@@ -1,9 +1,10 @@
-import { auth } from './auth'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export default auth((req) => {
+export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
-  const isLoggedIn = !!req.auth
+  const authToken = req.cookies.get('auth_token')
+  const isLoggedIn = !!authToken
 
   const isDashboardRoute = pathname.startsWith('/dashboard')
   const isAuthRoute = pathname === '/login' || pathname === '/register'
@@ -17,7 +18,7 @@ export default auth((req) => {
   }
 
   return NextResponse.next()
-})
+}
 
 export const config = {
   matcher: ['/dashboard/:path*', '/login', '/register'],

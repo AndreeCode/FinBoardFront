@@ -1,6 +1,7 @@
-'use client';
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card'
 import {
   BarChart,
   Bar,
@@ -10,37 +11,99 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
+} from 'recharts'
+import { getDashboardData, DashboardData } from '@/src/lib/actions/dashboard'
+import { formatSoles } from '@/src/lib/currency'
+import { Loader2 } from 'lucide-react'
 
-const data = [
-  { mes: 'Ene', gastos: 2400, ingresos: 3200, inversiones: 1500 },
-  { mes: 'Feb', gastos: 1398, ingresos: 3500, inversiones: 2100 },
-  { mes: 'Mar', gastos: 2800, ingresos: 3800, inversiones: 2500 },
-  { mes: 'Abr', gastos: 3908, ingresos: 4500, inversiones: 3200 },
-  { mes: 'May', gastos: 4800, ingresos: 5200, inversiones: 3800 },
-  { mes: 'Jun', gastos: 3800, ingresos: 4900, inversiones: 4100 },
-];
+type Period = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'semiannual' | 'annual'
 
 export function ExpenseChart() {
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [period, setPeriod] = useState<Period>('monthly')
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period])
+
+  async function loadData() {
+    setIsLoading(true)
+    try {
+      const result = await getDashboardData(period)
+      setData(result)
+    } catch (error) {
+      console.error('Error loading dashboard data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading || !data || !data.trends) {
+    return (
+      <Card className="border-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm md:text-base font-bold">Resumen</CardTitle>
+        </CardHeader>
+        <CardContent className="pb-2 flex items-center justify-center h-48">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const periodLabel = {
+    daily: 'Día',
+    weekly: 'Semana',
+    monthly: 'Mes',
+    quarterly: 'Trimestre',
+    semiannual: 'Semestre',
+    annual: 'Año'
+  }
+
+  const chartData = (data.trends || []).map((t) => ({
+    mes: t.period,
+    gastos: t.expenses,
+    ingresos: t.income,
+    inversiones: t.investments,
+  }))
+
   return (
     <Card className="border-border">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm md:text-base font-bold">Resumen (6 meses)</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm md:text-base font-bold">Resumen ({periodLabel[period]})</CardTitle>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as Period)}
+            className="text-xs bg-transparent border border-border rounded px-2 py-1"
+          >
+            <option value="daily">Diario</option>
+            <option value="weekly">Semanal</option>
+            <option value="monthly">Mensual</option>
+            <option value="quarterly">Trimestral</option>
+            <option value="semiannual">Semestral</option>
+            <option value="annual">Anual</option>
+          </select>
+        </div>
       </CardHeader>
       <CardContent className="pb-2">
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={data}>
+          <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis 
-              dataKey="mes" 
+            <XAxis
+              dataKey="mes"
               stroke="var(--muted-foreground)"
               style={{ fontSize: '12px' }}
             />
-            <YAxis 
+            <YAxis
               stroke="var(--muted-foreground)"
               style={{ fontSize: '12px' }}
+              tickFormatter={(value) => `S/${value}`}
             />
-            <Tooltip 
+            <Tooltip
+              formatter={(value: number) => formatSoles(value)}
               contentStyle={{
                 backgroundColor: 'var(--card)',
                 border: '1px solid var(--border)',
@@ -48,7 +111,7 @@ export function ExpenseChart() {
                 color: 'var(--foreground)'
               }}
             />
-            <Legend 
+            <Legend
               wrapperStyle={{ paddingTop: '20px' }}
               iconType="square"
             />
@@ -59,5 +122,5 @@ export function ExpenseChart() {
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  );
+  )
 }
