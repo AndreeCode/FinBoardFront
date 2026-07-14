@@ -2,7 +2,12 @@
 
 import { redirect } from 'next/navigation'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
+
+async function isSecureRequest(): Promise<boolean> {
+  const headerList = await headers()
+  return headerList.get('x-forwarded-proto') === 'https'
+}
 
 export async function login(formData: FormData): Promise<{ error?: string }> {
   const email = formData.get('email') as string
@@ -26,7 +31,7 @@ export async function login(formData: FormData): Promise<{ error?: string }> {
       const cookieStore = await cookies()
       cookieStore.set('auth_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: await isSecureRequest(),
         sameSite: 'lax',
         maxAge: 60 * 60 * 2,
         path: '/',
@@ -92,7 +97,7 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
       const cookieStore = await cookies()
       cookieStore.set('auth_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: await isSecureRequest(),
         sameSite: 'lax',
         maxAge: 60 * 60 * 2,
         path: '/',
