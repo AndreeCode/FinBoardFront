@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Loader2, Pencil, Trash2, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Plus, Loader2, Pencil, Trash2, TrendingUp, AlertTriangle, Wallet, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Input } from '@/src/components/ui/input'
@@ -17,9 +17,10 @@ import {
   CreateInvestmentRequest,
   UpdateInvestmentRequest 
 } from '@/src/lib/actions/investments'
-import { getTransactions, Transaction } from '@/src/lib/actions/transactions'
+import { getTransactions, createTransaction, Transaction } from '@/src/lib/actions/transactions'
 import { formatSoles } from '@/src/lib/currency'
 import { toast } from 'sonner'
+import { getDashboardData } from '@/src/lib/actions/dashboard'
 
 const RISK_LEVELS = [
   { value: 'low', label: 'Bajo', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
@@ -40,9 +41,12 @@ export function InvestmentsManager() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [dashboardData, setDashboardData] = useState<{ balance: number; you_owe: number; you_are_owed: number } | null>(null)
 
-  const [newInvestment, setNewInvestment] = useState<CreateInvestmentRequest>({
+  const [newInvestment, setNewInvestment] = useState<CreateInvestmentRequest & { description: string; amount: number }>({
     transaction_id: '',
+    description: '',
+    amount: 0,
     expected_gain: 0,
     risk_level: 'medium',
     status: 'active',
@@ -57,12 +61,18 @@ export function InvestmentsManager() {
   async function loadData() {
     setIsLoading(true)
     try {
-      const [invData, txData] = await Promise.all([
+      const [invData, txData, dashData] = await Promise.all([
         getInvestments(),
         getTransactions(),
+        getDashboardData(),
       ])
       setInvestments(invData)
       setTransactions(txData.filter(tx => tx.type === 'investment'))
+      setDashboardData({
+        balance: dashData.summary.balance,
+        you_owe: dashData.summary.you_owe,
+        you_are_owed: dashData.summary.you_are_owed,
+      })
     } catch {
       toast.error('Error al cargar datos')
     } finally {
@@ -89,14 +99,49 @@ export function InvestmentsManager() {
   }
 
   async function handleCreate() {
-    if (!newInvestment.transaction_id) {
-      toast.error('Selecciona una transacción')
+    if (!newInvestment.description.trim()) {
+      toast.error('La descripción es requerida')
+      return
+    }
+    if (!newInvestment.amount || newInvestment.amount <= 0) {
+      toast.error('El monto debe ser mayor a 0')
       return
     }
 
     setIsLoading(true)
     try {
-      const result = await createInvestment(newInvestment)
+      const txResult = await createTransaction({
+        category_id: null,
+        amount: newInvestment.amount,
+        type: 'investment',
+        transaction_date: new Date().toISOString(),
+        received_date: null,
+        due_date: null,
+        canceled: false,
+        description: newInvestment.description,
+      })
+
+      if (txResult.status !== 201) {
+        toast.error(txResult.msg || 'Error al crear transacción')
+        setIsLoading(false)
+        return
+      }
+
+      const transactionId = txResult.data?.id
+      if (!transactionId) {
+        toast.error('No se pudo obtener el ID de la transacción')
+        setIsLoading(false)
+        return
+      }
+
+      const investmentData: CreateInvestmentRequest = {
+        transaction_id: transactionId,
+        expected_gain: newInvestment.expected_gain,
+        risk_level: newInvestment.risk_level,
+        status: newInvestment.status,
+      }
+
+      const result = await createInvestment(investmentData)
       if (result.status === 201) {
         toast.success(result.msg)
         resetForm()
@@ -115,6 +160,8 @@ export function InvestmentsManager() {
   function resetForm() {
     setNewInvestment({
       transaction_id: '',
+      description: '',
+      amount: 0,
       expected_gain: 0,
       risk_level: 'medium',
       status: 'active',
@@ -174,7 +221,7 @@ export function InvestmentsManager() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div 
           className="border-2 border-dashed border-purple-500/30 rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all cursor-pointer"
           onClick={() => setShowCreateModal(true)}
@@ -188,6 +235,18 @@ export function InvestmentsManager() {
 
         <Card className="border-border">
           <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
+            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-green-600" />
+            </div>
+            <span className="text-xs text-muted-foreground">Disponible</span>
+            <span className="text-lg font-bold text-green-500">
+              {formatSoles(dashboardData?.balance || 0)}
+            </span>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border">
+          <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
             <div className="text-2xl">📊</div>
             <span className="text-2xl font-bold text-foreground">{investments.length}</span>
             <span className="text-xs text-muted-foreground">Inversiones activas</span>
@@ -196,13 +255,27 @@ export function InvestmentsManager() {
 
         <Card className="border-border">
           <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
-            <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
             </div>
-            <span className="text-xs text-muted-foreground">Riesgo promedio</span>
-            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-0">
-              Medio
-            </Badge>
+            <span className="text-xs text-muted-foreground">Invertido</span>
+            <span className="text-lg font-bold text-foreground">
+              {formatSoles(investments.reduce((sum, inv) => sum + getTransactionAmount(inv.transaction_id), 0))}
+            </span>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border">
+          <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
+            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <ArrowUpDown className="w-5 h-5 text-red-600" />
+            </div>
+            <span className="text-xs text-muted-foreground">Te deben / Debes</span>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 font-medium">{formatSoles(dashboardData?.you_are_owed || 0)}</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-red-500 font-medium">{formatSoles(dashboardData?.you_owe || 0)}</span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -245,11 +318,13 @@ export function InvestmentsManager() {
                     </Badge>
                   </div>
                   <h4 className="font-semibold text-foreground mb-1 truncate">{txDesc}</h4>
-                  <p className="text-2xl font-bold text-purple-500 mb-2">
-                    {formatSoles(txAmount)}
-                  </p>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <p>Ganancia esperada: <span className="text-purple-500 font-medium">{inv.expected_gain}%</span></p>
+                  <div className="space-y-1 mb-2">
+                    <p className="text-xs text-muted-foreground">Invertido: <span className="text-foreground font-medium">{formatSoles(txAmount)}</span></p>
+                    <p className="text-xs text-muted-foreground">Ganancia: <span className="text-purple-500 font-medium">{inv.expected_gain}%</span></p>
+                    <p className="text-lg font-bold text-purple-500">
+                      {formatSoles(txAmount * (1 + inv.expected_gain / 100))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">esperas recibir</p>
                   </div>
                   <div className="flex gap-1 mt-3 pt-3 border-t border-border">
                     <Button size="sm" variant="ghost" onClick={() => startEdit(inv)}>
@@ -275,19 +350,23 @@ export function InvestmentsManager() {
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Transacción</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={newInvestment.transaction_id}
-                onChange={(e) => setNewInvestment({ ...newInvestment, transaction_id: e.target.value })}
-              >
-                <option value="">Seleccionar...</option>
-                {transactions.map((tx) => (
-                  <option key={tx.id} value={tx.id}>
-                    {tx.description} - {formatSoles(tx.amount)}
-                  </option>
-                ))}
-              </select>
+              <Label>Descripción</Label>
+              <Input
+                placeholder="Ej: Depósito a plazo BCP"
+                value={newInvestment.description}
+                onChange={(e) => setNewInvestment({ ...newInvestment, description: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Monto</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={newInvestment.amount || ''}
+                onChange={(e) => setNewInvestment({ ...newInvestment, amount: parseFloat(e.target.value) || 0 })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Ganancia esperada (%)</Label>

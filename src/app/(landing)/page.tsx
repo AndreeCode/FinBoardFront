@@ -429,9 +429,9 @@ export default function LandingPage() {
               <a href="#" className="hover:text-foreground transition">
                 Twitter
               </a>
-              <a href="#" className="hover:text-foreground transition">
+              {/* <a href="#" className="hover:text-foreground transition">
                 GitHub
-              </a>
+              </a> */}
               <a href="#" className="hover:text-foreground transition">
                 Discord
               </a>

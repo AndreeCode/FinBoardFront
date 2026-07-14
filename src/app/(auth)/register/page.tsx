@@ -170,14 +170,14 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* <div className="grid grid-cols-2 gap-3">
         <Button type="button" variant="outline" disabled={isLoading}>
           Google
         </Button>
         <Button type="button" variant="outline" disabled={isLoading}>
           GitHub
         </Button>
-      </div>
+      </div> */}
     </AuthCard>
   );
 }

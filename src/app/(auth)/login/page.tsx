@@ -116,20 +116,20 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* <div className="grid grid-cols-2 gap-3">
           <Button type="button" variant="outline" disabled={isLoading}>
             Google
           </Button>
           <Button type="button" variant="outline" disabled={isLoading}>
             GitHub
           </Button>
-        </div>
+        </div> */}
 
-        <div className="text-center">
+        {/* <div className="text-center">
           <a href="#" className="text-xs text-primary hover:underline">
             ¿Olvidaste tu contraseña?
           </a>
-        </div>
+        </div> */}
       </AuthCard>
     </>
   )
